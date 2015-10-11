@@ -1,0 +1,381 @@
+\documentclass[authoryear,11pt,review]{elsarticle}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{placeins}
+\usepackage[noend]{algpseudocode}
+\newdefinition{example}{Example}
+
+\newcommand{\mtr}{^{\textsf{T}}}
+\newcommand{\stim}{\ensuremath{\mathbf{x}}}
+\newcommand{\resp}{\ensuremath{Y}}
+\newcommand{\pars}{\mbox{\boldmath$\theta$}}
+\renewcommand{\vec}[1]{\text{\bf{#1}}}
+\newcommand{\mat}[1]{\text{\bf{#1}}}
+\newcommand{\gvec}[1]{\mbox{\boldmath$#1$}}
+\newcommand{\gmat}[1]{\mbox{\boldmath$#1$}}
+\newcommand{\ISest}{\ensuremath{\hat{\mu}_\text{IS}}}
+\newcommand{\ISests}{\ensuremath{\hat{\mu}_\text{ISn}}}
+
+\usepackage[displaymath, mathlines]{lineno}
+\usepackage{etoolbox}
+\biboptions{longnamesfirst}
+
+\journal{Journal of Mathematical Psychology}
+
+\begin{document}
+\begin{frontmatter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Title and Authors
+\title{A Tutorial on Gaussian Process Exploration-Exploitation}
+\author{Eric Schulz\corref{cor1}}
+\author{ Maarten Speekenbrink\corref{cor1}}
+\author{Andreas Krause\corref{cor2}}
+\cortext[cor1]{Department of Experimental Psychology, University College London.}
+\address{Computational Learning and Decision Making Laboratory \\ University College London}
+\cortext[cor2]{Department of Computer Science, Swiss Federal Institute of Technology Z\"urich.}
+\address{ Learning and Adaptive Systems Group \\ ETH Z\"urich}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%ABSTRACT
+\begin{abstract}
+This tutorial introduces Gaussian Process Regression as a method to explore (learn) and exploit (maximize) unknown functions. Gaussian Process Regression is a popular non-parametric Bayesian approach to sequential function learning problems. This tutorial aims to provide an accessible introduction to these techniques. We will introduce and define Gaussian Processes as a distribution over functions used for Bayesian inference and demonstrate different applications thereof. Examples will focus on pure exploration within optimal design problems, bandit-like exploration-exploitation scenarios, and on scenarios with additional constraints, for example safe explorations, where the goal is to never sample below a certain threshold. Software pointers will be provided.
+\end{abstract}
+\begin{keyword}
+Gaussian Process \sep Exploration-Exploitation \sep Bandit Problems
+\end{keyword}
+\end{frontmatter}
+\linenumbers
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Introduction
+\section{Introduction}
+Many applied research problems require us to explore (learn) or exploit (optimize) an unknown function that maps inputs to outputs $f: x \rightarrow y$ \citep{mockus2010bayesian}. No matter if we try to find a function that describes participants' behavior \citep{cavagnaro2014functional}, estimate parameters of psychological models \citep{wetzels2010bayesian}, try to sequentially optimize stimuli in an experiment \citep{myung2009optimal}, or model how participants themselves learn to interact with their environment \citep{meder2012information}. Often times the underlying function might be unknown, hard to evaluate analytically, or other requirements such as design costs might complicate the process of information acquisition. In these situations, Gaussian Process regression can serve as a useful multi-purpose tool towards learning and optimization \citep{rasmussen2006gaussian}. Gaussian Process regression is a non-parametric Bayesian approach \citep{gershman2012tutorial},  applied to regression problems. It can capture many different relations between inputs and outputs by utilizing potentially infinite number of parameters and letting the data decide directly upon the level of complexity through the means of Bayesian inference \citep{williams1998prediction}.
+
+This tutorial will introduce Gaussian Process Exploration-Exploitation as an approach towards learning and optimization of unknown functions. It is intended for a general readership and contains many practical examples and high level explanations. It consists of 5 main parts: The first part will brush over the mathematical underpinnings of Gaussian Process regression. The second part will show how Gaussian Processes can be used in problems of optimal experimental design, when the goal is pure exploration, that is to learn a function as well as possible. The third part will describe how Bayesian Optimization (\emph{exploitation}) with Gaussian Processes works. In the fourth part, we will talk about ways of utilizing Gaussian Process exploration-exploitation methods in situations with additional requirements and show one example where the goal is to avoid areas that are below a certain threshold. We will conclude by sketching out the possibility of Gaussian Processes as a low level description of cognitive processes.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Quick problem statement
+\section{Problem Statement}
+Imagine you have a function $f: x \rightarrow y$ that maps an input $x$ to an output $y$. For both an \emph{exploration} as well as an \emph{exploration-exploitation} scenario the goal is to make stepwise queries as wisely as possible. Querying a function means that you determine a point $x^*$ that you want to observe next and then see an output of the function $y=f(x^*)+\epsilon$ with some noise $\epsilon$ at that point. Normally it is assumed that this noise is independent and identically distributed, following a Gaussian distribution $\epsilon \sim \mathcal{N}(0,\sigma^2)$.
+
+\subsection{Exploration}
+The goal within exploration is to chose $x^*$ in a way that allows you to learn an unknown function as well as possible. This is sometimes referred to as an optimal experimental design problem \citep{goos2011optimal}. More formally, the task is to find an informative set of points $\mathcal{A} \subset \mathcal{D}$, that is a sequential query $\mathcal{A}$ out of the design set $\mathcal{D}$, chosen to maximize information gain over all potential steps. Generally, the information gain is measured as the difference in entropy between the state before a sample point was queried and afterwards as shown in Equation~\ref{eq:infogain1}.
+
+\begin{align}
+\label{eq:infogain1}
+ I(y_{A};f)=H(y_{A})-H(y_{A}|f)
+\end{align}
+
+In the discrete case, the entropy $H$ can be calculated as shown in Equation~\ref{eq:entdis}.
+\begin{equation*}
+\label{eq:entdis}
+H(X)=\sum_i^n p(x_i) \log p(x_i)
+\end{equation*}
+
+Finding the absolute information gain maximizer is generally NP-hard \citep{ko1995exact}, which means that one can never know the best strategy of how to pick all of the observations over time to certainly reach the maximum information gain at the end as this requires an exponentially increasing problem space to be evaluated. 
+
+Optimal design problems are ubiquitous in psychology. No matter if we have to find out how participants integrate information \citep{borji2013bayesian} or if we have to find stimuli in order to distinguish between different models \citep{cavagnaro2010adaptive}, often times we have to try and learn an underlying function that we do not know a priori and do so both adaptively and efficiently. As we will see later, Gaussian Process exploration algorithms provide us with an excellent tool for such tasks.
+
+
+\subsection{Exploration-Exploitation}
+The goal within exploration-exploitation tasks is to both learn and optimize a function. Here, it is essentially the intention to learn a function quickly so that we then can find the maximum of that function and keep on exploiting it; exploiting means entering the input that produces the highest output. This is normally measured by regret, the distance between what your current guess of the maximum has produced and what the best argument would have produced. If you are sequentially producing an estimate of what you currently think might be the maximum $x^*$, then it is possible to measure regret $R$ by the difference to what the actual best argument $x_{\text{max}}$ would have produced.
+
+\begin{align*}
+R&=\sum_{i=1}^{T}r_i\\
+&=\sum_{i=1}^{T}f(x_{\text{max}})-f(x^*)
+\end{align*}
+
+Problems where we have to optimize an unknown function are very common; be it to estimate parameters of a complex model \citep{snoek2012practical} or finding the stimulus that produces the maximal response in an experiment \citep{daunizeau2011optimizing}, many problems require us to explore and exploit functions. Sometimes this approach is also called Bayesian Optimization \citep{brochu2010tutorial}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Derivation of Gaussian Process
+\section{Gaussian Processes-a distribution over functions}
+\subsection{Motivation}
+If our goal is to learn or optimize an unknown function, then we need the following two ingredients to be successful.
+
+\begin{enumerate}
+\item A model for $f$, that is a model that learns what $f$ looks like.
+\item A method to select observations, given the problem statement.
+\end{enumerate}
+
+In this section we want to find a good model for $f$ before we can then use it to either explore or exploit the function.
+
+
+\subsection{Weight space view}
+Let us first start by considering the text book-approach to learn functions, which is linear Bayesian regression, before then transitioning over to Gaussian Process regression. Remember that it is the task to either learn or optimize an unknown function. Therefore, regressing observed input points to observed output points by standard regression seems to be an apparent thing to do. Once we are able to capture the function --so the intuition-- we can easily quantify our uncertainty about it or try to find the point that produces the highest expected output.
+In classic linear regression, we assume normally distributed noise, $\epsilon\sim\mathcal{N}(0, \Sigma)$, and our goal is to predict a value $y$ based on observations $\mathbf{x}$ using weights $\mathbf{w}$.\\
+
+\begin{align*}
+f(\mathbf{x}|\mathbf{w})&=\mathbf{x}^\top\mathbf{w}\\
+y&=f+\epsilon
+\end{align*}
+
+Here, $\mathbf{x}$ are our observations and $\mathbf{w}$ is a vector containing the weights (sometimes notated as $\beta$). If we assume a Gaussian prior over the parameters $p(\mathbf{w})=\mathcal{N}(0, \Sigma)$ and the likelihood $p(\mathbf{y}|\bf{X,w})=\mathcal{N}(\mathbf{X}^\top \mathbf{w},\sigma^2\mathbf{I})$, then --by applying standard Bayesian inference-- we get the posterior
+
+\begin{align*}
+p(\mathbf{w}|\mathbf{y,X}) & \propto p(\mathbf{y}|\mathbf{X,w})p(\mathbf{w})\\
+&=\mathcal{N}(\frac{1}{\sigma^2}\mathbf{A}^{-1}\mathbf{Xy}, \mathbf{A}^{-1})
+\end{align*}
+
+with $\mathbf{A}=\mathbf{\Sigma}^{-1}+\sigma^{-2}\mathbf{XX}^{\top}$. In order to make predictions at a new test points $\mathbf{x}_\star$, we have to average over all posterior predictions
+
+\begin{align*}
+p(f_\star|\mathbf{x}_\star, \mathbf{X},\mathbf{y})&=\int p(f_\star|\mathbf{x}_\star,\mathbf{w})p(\mathbf{w}|\mathbf{X},\mathbf{y})d\mathbf{w}\\
+&=\mathcal{N}(\sigma^{-2}\mathbf{x}_\star^{\top} \mathbf{A}^{-1} \mathbf{Xy},\mathbf{x}_\star^{\top} \mathbf{A}^{-1}\mathbf{x}_\star)
+\end{align*}
+
+Even though this approach is commonly chosen to model functions, the way it is set up above only allows to make linear predictions. However, only few relations in the real world are actually linear. Therefore, what we need is a way to model non-linear dependencies as well. One possible adjustment is to use a projection of the inputs $\mathbf{x}$ onto a feature space by using a function $\phi(\mathbf{x})$. One common projection is to use polynomials, resulting into polynomial regression. Take a cubic regression as an example, which assumes a function $f(x)=\beta_0+\beta_1x+\beta_2x^2+\beta_3x^3+\epsilon$. Deriving the posterior for this model is similar to the linear regression described before, only that all  $\mathbf{X}$ are replaced by the projection $\mathbf{\Phi}=\phi(\mathbf{X})$. However, the problem then becomes to find appropriate projections for our input variables as infinitely many projections might be possible and we have to choose one a priori (or by model comparison between finite sets of parametric forms). Especially if the problem is to explore and exploit a completely unknown function, this approach will not be beneficial as we would not know which projections we should try out (we do not know the parametric form a priori). Fortunately, there exists another approach to this problem which treats functions as distributions and models this distribution directly. This approach is called Gaussian Process regression and shifts the view away from a weight space perspective to a function space view.
+
+
+\subsection{Function space view}
+Another approach to regression problems is --instead of modeling distributions over weights-- to focus on distributions over functions. A common way to describe a distribution over functions is a Gaussian Process. A Gaussian process is defined as a collection of random variables, any finite number of which have a jointly Gaussian distribution. Therefore, a function is distributed as
+
+\begin{equation*}
+f(\mathbf{x}) \sim \mathcal{GP}(m(\mathbf{x}),k(\mathbf{x},  \mathbf{x}'))
+\end{equation*}
+
+Here, $m(\mathbf{x})$ is a mean function modeling the expected output of the function and $k( \mathbf{x}, \mathbf{x}')$ is a kernel function modeling the covariance between different points. 
+
+\begin{align*}
+m( \mathbf{x})&=\mathbb{E}[f( \mathbf{x})]\\
+k(x,x')&=\mathbb{E}\left[(f( \mathbf{x})-m(x))(f( \mathbf{x'})-m(x'))\right]
+\end{align*}
+
+As $k(x,x')$ models the covariance between two different points, we have to choose a function that will produce sensible estimates. The function $k$ is commonly called the \emph{kernel} of the Gaussian Process \citep{jakel2007tutorial}. The choice of an appropriate kernel is normally based on assumptions such as smoothness and likely patterns to be expected in the data. If the data is not expected to be periodic, then a sensible assumption is normally that the correlation between two points decays according to a power function in dependency of the distance between the two points and that the covariance is symmetric, that is that only the distance between two points matters, but not the direction. This just means that closer points are expected to be more similar than points which are further away from each other in all possible directions. One very popular choice of a kernel fulfilling those requirement is the so-called squared exponential (sometimes also called Gaussian or Radial Basis Function) kernel.
+
+\begin{equation*}
+k(x,x') =\sigma^2\exp\left(-\frac{(x-x')^2}{2\lambda^ 2}\right)
+\end{equation*}
+
+
+The squared exponential is an expressive way to model smooth functions and the hyper parameters $\lambda$ (called the length-scale) and $\sigma^2$ (the noise constant) are normally optimized by using the marginal likelihood.
+
+This implies the aforementioned distribution over functions as we can easily generate samples for new input points at location $X_\star$.
+
+\begin{equation*}
+\mathbf{f_\star} \sim \mathcal{N}(0, K\left(X_\star,X_\star)\right)
+\end{equation*}
+
+
+Given observations $\mathcal{D}=\{\mathbf{X}, \mathbf{y}\}$ with a noise level $\sigma$, we can draw new predictions from our function $\mathbf{f}_\star$ for inputs $X_\star$ as described below.
+
+\begin{align*}
+\begin{bmatrix}
+       \mathbf{y}         \\[0.3em]
+       \mathbf{f}_\star 
+     \end{bmatrix}
+\sim \mathcal{N}\left(\mathbf{0}, 
+ \begin{bmatrix}
+K(X,X)+\sigma^2 I & K(X,X_\star)       \\[0.3em]
+K(X_\star, X) & K(X_\star, X_\star)
+     \end{bmatrix}
+\right)
+\end{align*}
+
+This means that we treat a function as a vector of infinite size. However, as we always only have to make predictions for finitely many points, we can simply draw outputs for these points by using a multivariate normal distribution with a covariance matrix generated by our kernel. Calculating the expectation of the Gaussian Process at the new points then is straight forward.
+
+\begin{align*}
+\mathbf{f}_\star|X,\mathbf{y},X_\star &\sim \mathcal{N}(\overline{\mathbf{f}}_\star, \text{cov}(\mathbf{f}_\star))~~\text{where}
+\end{align*}
+
+This means that predictions for new points are generated based on the expected mean value and covariance function of the posterior Gaussian Process. 
+
+\begin{align*}
+\mathbb{E}[\mathbf{f}_\star|X,\mathbf{y},X_\star]&=K(X_\star,X)[K(X,X)+\sigma^2I]^{-1}\mathbf{y} \\
+\text{cov}(\mathbf{f}_\star)&=K(X_\star,X_\star)-K(X_\star,X)[K(X,X)+\sigma^2I]^{-1}K(X,X_\star)
+\end{align*}
+
+Figure~\ref{fig:gpexample} shows an example of samples from a squared exponential Gaussian Process prior and the updated mean functions after some points have been observed.
+
+\begin{figure}[ht]
+\includegraphics[scale=0.5]{figs/gpexample.pdf}
+\caption{Example of samples from a Gaussian Process prior and posterior. Grey lines inidcate samples from the GP. Black dots mark empirical observations. The dark grey line marks the current mean of the GP.}
+\label{fig:gpexample}
+\end{figure}
+
+If we look at how to generate predictions for single points, we get the following equation of the expectation for new points.
+
+\begin{equation*}
+\mathbf{f}_\star(\mathbf{x})=\sum_{i=1}^{n}\alpha_{i}k(\mathbf{x}_i,\mathbf{x}_\star)
+\end{equation*}
+
+with $\alpha=\left(K(X,X)+\sigma^2I\right)^{-1}\mathbf{y}$.
+What this equation tells us is that a Gaussian Process can be written as a sum of basis functions. This means that a potentially infinitely parametrized model boils down to a finite sum when making predictions. This sum only depends on the chosen kernel and the data observed thus far \citep{kac1947explicit}. 
+
+This is also why Gaussian Process regression is referred to as non-parametric. It is not the case that this regression approach has no parameters. Instead, it has potentially infinitely many parameters (parametrized by the chosen kernel), but only manifests itself by a finite sum when making predictions. Therefore, Gaussian Process regression is a powerful tool to capture many stationary functions. This in turn can be easily applied to contexts where the task is to explore or exploit these functions sequentially.
+
+\subsection{General setup}
+Having found a good model to learn functions, that is our first ingredient for successful sequential function learning, we now have to find a way to smartly explore or exploit the function we are learning over time. Within  the Gaussian Process approach both pure \emph{exploration} and \emph{exploitation} can be viewed as two sides of the same coin. They both take a Gaussian Process to model an underlying unknown function \footnote{Sometimes the Gaussian Process here is referred to as a surrogate model \citep{gramacy2008bayesian}.} and then estimate the utility of all available queries (candidate points from which to sample next) by using what is called an acquisition function. An acquisition function can be seen as a measurement of usefulness (or utility) that candidate points under consideration promise to produce. The approach then goes on to choose as the next point the one that currently produces the highest utility. The way the general set up works is shown in Algorithm~\ref{alg:general}.
+
+\begin{algorithm}
+\caption{General $\mathcal{GP}$ optimization Algorithm}
+\label{alg:general}
+\begin{algorithmic}
+\Require Input space $\mathcal{D}=\{X,\mathbf{y}\}$; $\mathcal{GP}$-prior $\mu_0=0$, $\sigma_0$, $k$
+\For{$t=1,2,\dots$}\\
+ \hspace{5mm}\textbf{Choose} $x^*_{ t}=\text{argmax } f_{\text{Acquisition}}(\textbf{x})$\\
+\hspace{5mm}\textbf{Sample} $y_t=f(x^*_{ t})+\epsilon_t$\\
+\hspace{5mm}\textbf{Perform} Bayesian update for $\mu_t$ and $\sigma_t$\\
+\textbf{end for}
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+This algorithm starts out with a Gaussian Process distribution over functions, then assesses the usefulness of the available samples by utilizing the acquisition function and selects the point that currently maximizes this function. Afterwards, the new output at the chosen sample point is observed, the Gaussian Process is updated, and the process starts anew. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Exploration
+\section{Exploration and Optimal Design}
+\subsection{Acquisition function}
+The goal in an optimal design setting is to learn an unknown function as well and quickly as possible. As said before, this is the same as the attempt to maximize information gain over all trials. For a Gaussian, the entropy $H(\mathcal{N}(\mu, \Sigma) = \frac{1}{2} \log  |2\pi e\Sigma|$, which means that in our setting $I(\mathbf{y};f)=\frac{1}{2}\log |I+ \sigma^{-2}K|$, where $K=[k(x,x')]$. Even though finding the overall information gain maximizer is NP-hard, it can be approximated by an efficient greedy algorithm based on Gaussian Processes. If $F(A)=I(\mathbf{y}_A;f)$, then this algorithm picks $x_t= \text{argmax} F(A_{t-1} \cup \{\mathbf{x}\})$. This in turn can be shown to be equivalent to the following acquisition function
+
+\begin{align}
+f_{\text{Acquisition}}(\mathbf{x}_t)= \text{argmax} ~\sigma_{t-1}(\mathbf{x})
+\end{align}
+
+What this algorithm does, is to start out with a Gaussian Process prior, and to sequentially sample from the points that currently show the highest uncertainty in a greedy fashion. Even though this algorithm sounds na\"{i}ve at first, it can actually be shown to converge to at least a constant fraction of the maximum information gainer \citep{krause2008near}.
+\begin{align}
+F(A_T) \geq \left(1-\frac{1}{e}\right) \max F(A)
+\end{align}
+This is based on a property of the acquisition function called \emph{submodularity} \citep{krause2012submodular}. Intuitively, submodularity here means that information never hurts (it is always helpful to observe more points), but also that the usefulness of newly acquired points decreases the more points have been sampled before. This diminishing returns property is crucial to show that the greedy algorithm can be successful over all (see Appendix). A simple example of the Gaussian Process uncertainty reduction sampler is shown in Figure~\ref{gpsigma} below. We have sampled a function from a Gaussian Process prior (a squared exponential) and let the algorithm select observations by picking as the next obvservation the one that currently has the highest standard deviation attached.
+
+\begin{figure}[ht]
+\caption{GP-uncertainty reduction example. The dark grey line marks the current mean of the GP. The dashed line shows the upper part of the standard deviation. The light grey lines are samples from the GP.}
+\label{gpsigma}
+\centering
+\includegraphics[scale=0.5]{figs/optlearnexample.pdf}
+\end{figure}
+
+
+\subsection{Example: Learning unknown functions}
+In order to demonstrate how Gaussian Process based exploration works, let us simulate how the algorithm learns unknown functions and compare it to other algorithms. If we assume that we have to learn an unknown function as quickly as possible and that the function $f$ only takes a one-dimensional input $x=[0,0.1,0.2,\dots,10]$ and to which it maps an output $y$, then we can set up different functions that the models can learn actively over time. As the GP is considered to learn many different functions well, we will test the following different functions: a linear, quadratic, cubic, logarithmic, sine, and a non-stationary function (see Appendix for details).  
+
+We have deliberately chosen different parametric forms to assess the learning methods. The models we have used to learn the different function are a linear, a quadratic, a cubic, and a Gaussian Process (with a squared exponential kernel) regression. Each model was set up to learn the underlying function by picking as the next observation the one that currently has the highest uncertainty (standard deviation of the predicted mean). We let each model run 100 times for each underlying function and averaged the mean squared error over the whole discretized input space for each step. Results are shown in Figure~\ref{perfomance}.
+
+It can be seen that the Gaussian Process model learns all functions both efficiently and well. Only in the cases in which the used learning function is indeed the same as the learning function (for example, using a linear function to learn an underlying linear function), does another model learn faster than the Gaussian Process.
+
+This means that Gaussian Processes are especially useful in cases where the underlying function is not known or can be ignored. For examle, one could easily use Gaussian Processes to learn participants' utility function over different experiments or simply use them to generate stimuli that are most informative overall. 
+
+\FloatBarrier
+\begin{figure}[ht]
+ \caption{GP-uncertainty reduction example.}
+\label{perfomance}
+  \centering
+    \includegraphics[scale=0.95]{figs/activeperfomance.pdf}
+\end{figure}
+\FloatBarrier
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Exploration-Exploitation
+\section{Exploration-Exploitation and Bayesian Optimization}
+In an exploration-exploitation scenario the goal is to find the argument to a function that produces the maximum output as quickly as possible. One way to measure the quality of this search process is to quantify regret. Regret is the distance between the output of the currently chosen argument and the maximum output.
+\begin{align}
+r(\mathbf{x})=f(\mathbf{x}^*)-f(\mathbf{x})
+\end{align}
+The goal then is to minimize regret over all available trials.
+\begin{align}
+\min \sum_{t}^{T}r(x_t)=\max\sum_{t}^{T}f(x_t)
+\end{align}
+Again, finding the global function maximizer is NP hard. That is finding the minimum sequence of queries that leads to the lowest regret overall is almost impossible. However, there is again a greedy trick one can apply in this scenario. This trick is based on redefining the function maximization problem as a bandit task. In a bandit tasks the goal is to maximize output by playing the right arm out of many available arms (it is named after the one armed-bandits that can be found in casinos). As the tasks is to maximize output of a function, the discretized input points to that functions are seen as arms, that are correlated in dependency of the underlying covariance kernel. Taking this perspective, one easy way to approach these kind of problems is the following acquisition function called Upper Confidence Band sampling.
+\begin{align}
+f_{\text{Acquisition}}(\mathbf{x})=\mu_{t-1}(\mathbf{x})+k\sigma_{t-1}(\mathbf{x})
+\end{align}
+Upper Confidence Band sampling (UCB) plays the arm that currently shows the highest upper confidence interval. This strategy is sometimes called naive optimism in the face of uncertainty. Intuitively, the upper confidence band is determined by two factors, the current estimate of the mean at a particular point (the higher the estimate, the higher the band) and the uncertainty attached to that estimate (the higher the uncertainty, the higher the band). Therefore, the UCB algorithm trades off naturally between expectations and uncertainties. An example of how the UCB works is shown in Figure~\ref{gpucb}. Again, we have sampled a function from a Gaussian Process prior and have applied the algorithm to this function.
+
+\begin{figure}[ht]
+\caption{GP-UCB example. The dark grey line marks the current mean of the GP. The dashed line marks the GP's upper confidence bound. The light grey lines are samples from the GP.}
+\label{gpucb}
+ \centering
+  \includegraphics[scale=0.5]{figs/ucbexample.pdf}
+\end{figure}
+
+Even though the greedy UCB strategy is again na\"{i}ve, it can be shown that its regret is sublinear, again based on the submodularity of the overall information gain \citep{srinivas2009gaussian}. 
+
+\subsection{GP-UCB Example: Choosing movies}
+We use the imdb-movie data as an example for doing GP-UCB exploratio-exploitation. For this, we extracted 5141 movies from the data base, including the year they appeared, the budget that was used to make them, their length, as well as how many people had evaluated the movie on the imdb. The dependent variable was the actual imdb score and we set up a GP-UCB with a squared exponential kernel, set $\beta=3$ and let the algorithm pick 200 movies sequentially. Results are shown in Figure~\ref{gpucbmovies}.
+
+It can be seen that the algorithm quickly starts picking movies that produce low to zero regret. However, it still keeps exploring other movies from time to time, just to alqays come back to recommending movies with really high scores. Additionally, it explores all of the given input areas for quite some time, just to find good areas in the end.
+\begin{figure}[ht]
+\caption{GP-UCB example.}
+\label{gpucbmovies}
+   \includegraphics[scale=0.55]{figs/gpopt.pdf}
+\end{figure}
+\FloatBarrier
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Safe exploration
+\section{Safe Exploration-Exploitation}
+Sometimes an experimentalist's goal might not only be to learn or maximize a function, but additional requirements can also be important. One such requirement, for example, can be to avoid certain outputs as much as possible. One example for such a scenario is excitatory stimulation, especially in a physiologically setting. Imagine a medical scenario, where the task is to stimulate the spinal chord in such a way that certain movements are achieved \citep{desautels2014spinal}. Here, it is important to stimulate the spinal chord such that optimal recovery is achieved, but not too much as this might lead to painful reactions within the patients. Again, Gaussian Process optimization methods can be used here to learn the underlying function of what stimulations lead to what strength of reaction. However, an additional requirement now is to avoid these expectedly painful areas. It turns out that there is a smart way to adapt the GP-UCB approach described above while accommodating for this additional requirement. This is acchieved by an algorithm called SafeOpt \citep{sui2015safe}. Leaving the detailed technical explanation of this algorithm for the interested the reader to look up, this algorithm basically works by trading-off two different things. Firstly, it keeps a set of safe options it considers to be above the given threshold and tries to expand this set as much as it can. Secondly, it maintains a set of potential maximizers that, if used as an input, would potentially achieve the highest output. It then choses as the next point, a point within the intersection of these two sets that has the highest predictive variance.
+
+\subsection{Example: Stimulus Optimisation}
+Imagine that you have to optimize a stimulus that can be described by two dimensions $X_1$ and $X_2$. This means you have to find the maximum output $y$. However, you also want to avoid sampling values below 0 at all costs. For this we have drawn a two dimensional function from a Gaussian Process prior with a squared exponential kernel. This can be seen as a similar to the case where one want to present stimuli to participants, but make sure that participants never react with an intensity below a certain threshold. Results are shown in Figure~\ref{safeopt}.
+
+It can be seen that the SafeOpt algorithm finds the maximum of the function well, but also tries to expand the space of possible inputs more and more. At the same time, the algorithm does not sample from the white area (values below 0) for a single time. We therefore think that this algorithm could potentially applied in many optimal design settings that require additional constraints.
+\begin{figure}[ht]
+\caption{GP-SafeOpt example. White areas represent areas below 0. The black crosses show where the SafeOpt algorithm has sampled.}
+\label{safeopt}
+   \includegraphics[scale=0.5]{figs/safeoptimization.pdf}
+\end{figure}
+\FloatBarrier
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%GPs in Cognition
+\section{Gaussian Processes and cognition}
+As we have seen, Gaussian Processes (in combination with smart acquisition functions) are a powerful tool to learn and maximize unknown functions. However, they might also be applied in a different, even more psychological context, that is as as a model for human cognition within the tradition of Bayesian cognitive science \citep{chater2008probabilistic}. Non-parametric Bayesian approaches have been used before to describe associative learning \citep{gershman2012exploring} and categorization learning \citep{kemp2006learning}, among others.  Recently, \cite{lucas2015rational} have proposed to use Gaussian Processes as a rational model of human function learning for passive learning tasks. \cite{schulzassessing} used Gaussian Processes to assess participants judgments about the predictability of functions in dependency of the smoothness of the underlying kernel. Taking recent developments within the active learning community into account, we expect Gaussian Processes to soon become a fruitful descriptive model for human cognition in many different domains where participants have to act actively, that is to select information sequentially. In a first attempt, we have found that participants' behavior can be well described by Gaussian Process algorithms when the task is to learn and maximize a function both in a static \citep{schulz2015exploration} as well as in a dynamic environment \citep{schulz2015learning}. However, given GP's expressiveness and the mathematical guarantees that come with them, we expect them to be used more frequently as a model for human cognition in the near future and hope that this tutorial can help people to apply them more often.\\
+
+Here, it is not only the assumption of not having to choose a parametric shape a priori, but letting the data speak directly, that makes these models powerful as a psychological model. It is also the attached measure of uncertainty that comes for free when doing computations with Gaussian Processes, a characteristic more and more used in numerics \citep{hennig2015probabilistic} and optimization problems \citep{hennig2013quasi}. The resulting uncertainty of computation can then also be propagated between different systems easily \citep{damianou2012deep}. Using this fact, one could build of a model that involves control, learning, and optimization and in which uncertainty is modeled over the whole system, sort of a Bayesian Cognitivism approach.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Discussion
+\section{Discussion}
+This tutorial has introduced Gaussian Process regression as a general purpose inference engine to learn about (explore) and maximize (exploit) unknown functions. Gaussian Processes have been introduced mathematically and the greedy variance minimization exploration algorithm as well as the upper confidence bound sampling method for exploration-exploitation scenarios have been introduced. Within a simulated exploration experiment we have shown how Gaussian Processes can be used to efficiently learn about unknown functions in an optimal design set-up and gradually presented informative stimuli. Within a parameter tuning example, we have shown how GP-UCB can outperform other commonly used methods when the goal is to optimize hyper-parameters of a neural network. Additionally, we have talked about introducing additional requirements to the used acquisition function and have shown one example within a scenario, where the task was to show the optimal excitatory stimulus while avoiding some areas of the input space. Finally, we have talked about utilizing Gaussian Process models as actual models of cognition in the hope that they will be picked up and used more frequently in the near future.\\
+
+Of course a tutorial like this can never be fully comprehensive. Therefore, let us briefly point out some things that we have not covered here. First of all, using the Gaussian Process regression approach as we have parametrized here is only one possible approach towards regression problems. In fact, it can be shown that many standard Bayesian regression approaches can be re-parametrized to be equivalent to Gaussian Process regression, given specific assumptions about the kernel \citep{duvenaud2013structure}. The two chosen utility functions here also are just two options out of a pool of different acquisition functions. Another commonly used acquisition function for the pure exploration case is the attempt to minimize the expected variance summed up over the whole input space \citep{gramacy2014local}. Even though this method tends to sample less from the boundary cases as compared to the algorithm introduced here, it can be hard to compute, especially if the input space is large. There exist many different acquisition functions in the exploration-exploitation context, that are mostly discussed under the umbrella term Bayesian optimization \citep{de2012regret}. One other common acquisition function that is frequently used here is the expected probability of improvement \citep{mockus2012bayesian}, which choses as the next point the one that promises to have the highest likelihood of improving the currently expected maximum.  Again, this method of assessing candidate points can be computationally expensive and mathematical guarantees are only given for the UCB algorithm. Last not least, there are also many different acquisition functions with additional constraints available. Important to mention hereby are Bayesian black box optimization with additional constraints, the estimation of level sets, as well as Bayesian Quadrature-based algorithms. \\
+
+Here we have introduced Gaussian Process-based algorithms to explore and exploit unknown functions. We hope that this tutorial will help others to pick up these methods and that their usage will gradually become more common within psychology.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Software
+\section{Software packages}
+Table~\ref{software} below contains further Gaussian Process software pointers.
+\FloatBarrier
+\begin{table}[h!]
+\caption{Gaussian Process Software Packages}
+\label{software}
+\centering
+{\footnotesize
+ \begin{tabular}{llll}
+\bf{Name} & \bf{Algorithm} & \bf{Language} & \bf{Author}\\
+\hline
+GPML &GP Toolbox & Matlab & Rasmussen \& Williams\\
+SFO  & Submodular Optimization & Matlab & Krause\\
+GPy  & GP Toolbox & Python & Sheffield ML Group \\
+gptk & GP Toolbox & R & Lawrence \\
+tgp & Tree GPs, GP regression& R & Gramacy \& Taddy
+\end{tabular}
+}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{References}
+\bibliographystyle{elsarticle-harv}
+\bibliography{mybibfile}
+
+\end{document}

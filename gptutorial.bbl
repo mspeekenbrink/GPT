@@ -1,0 +1,189 @@
+\begin{thebibliography}{37}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+
+\bibitem[{Borji and Itti(2013)}]{borji2013bayesian}
+Borji, A., Itti, L., 2013. Bayesian optimization explains human active search.
+  In: Advances in neural information processing systems. pp. 55--63.
+
+\bibitem[{Brochu et~al.(2010)Brochu, Cora, and De~Freitas}]{brochu2010tutorial}
+Brochu, E., Cora, V.~M., De~Freitas, N., 2010. A tutorial on bayesian
+  optimization of expensive cost functions, with application to active user
+  modeling and hierarchical reinforcement learning. arXiv preprint
+  arXiv:1012.2599.
+
+\bibitem[{Cavagnaro et~al.(2014)Cavagnaro, Aranovich, McClure, Pitt, and
+  Myung}]{cavagnaro2014functional}
+Cavagnaro, D.~R., Aranovich, G.~J., McClure, S.~M., Pitt, M.~A., Myung, J.~I.,
+  2014. On the functional form of temporal discounting: An optimized adaptive
+  test.
+
+\bibitem[{Cavagnaro et~al.(2010)Cavagnaro, Myung, Pitt, and
+  Kujala}]{cavagnaro2010adaptive}
+Cavagnaro, D.~R., Myung, J.~I., Pitt, M.~A., Kujala, J.~V., 2010. Adaptive
+  design optimization: A mutual information-based approach to model
+  discrimination in cognitive science. Neural computation 22~(4), 887--905.
+
+\bibitem[{Chater and Oaksford(2008)}]{chater2008probabilistic}
+Chater, N., Oaksford, M., 2008. The probabilistic mind: Prospects for Bayesian
+  cognitive science. Oxford University Press.
+
+\bibitem[{Damianou and Lawrence(2012)}]{damianou2012deep}
+Damianou, A.~C., Lawrence, N.~D., 2012. Deep gaussian processes. arXiv preprint
+  arXiv:1211.0358.
+
+\bibitem[{Daunizeau et~al.(2011)Daunizeau, Preuschoff, Friston, and
+  Stephan}]{daunizeau2011optimizing}
+Daunizeau, J., Preuschoff, K., Friston, K., Stephan, K., 2011. Optimizing
+  experimental design for comparing models of brain function. PLoS Comput Biol
+  7~(11), e1002280.
+
+\bibitem[{de~Freitas et~al.(2012)de~Freitas, Smola, and Zoghi}]{de2012regret}
+de~Freitas, N., Smola, A., Zoghi, M., 2012. Regret bounds for deterministic
+  gaussian process bandits. arXiv preprint arXiv:1203.2177.
+
+\bibitem[{Desautels(2014)}]{desautels2014spinal}
+Desautels, T.~A., 2014. Spinal cord injury therapy through active learning.
+  Ph.D. thesis, California Institute of Technology.
+
+\bibitem[{Duvenaud et~al.(2013)Duvenaud, Lloyd, Grosse, Tenenbaum, and
+  Ghahramani}]{duvenaud2013structure}
+Duvenaud, D., Lloyd, J.~R., Grosse, R., Tenenbaum, J.~B., Ghahramani, Z., 2013.
+  Structure discovery in nonparametric regression through compositional kernel
+  search. arXiv preprint arXiv:1302.4922.
+
+\bibitem[{Gershman and Blei(2012)}]{gershman2012tutorial}
+Gershman, S.~J., Blei, D.~M., 2012. A tutorial on bayesian nonparametric
+  models. Journal of Mathematical Psychology 56~(1), 1--12.
+
+\bibitem[{Gershman and Niv(2012)}]{gershman2012exploring}
+Gershman, S.~J., Niv, Y., 2012. Exploring a latent cause theory of classical
+  conditioning. Learning \& behavior 40~(3), 255--268.
+
+\bibitem[{Goos and Jones(2011)}]{goos2011optimal}
+Goos, P., Jones, B., 2011. Optimal design of experiments: a case study
+  approach. John Wiley \& Sons.
+
+\bibitem[{Gramacy and Apley(2014)}]{gramacy2014local}
+Gramacy, R.~B., Apley, D.~W., 2014. Local gaussian process approximation for
+  large computer experiments. Journal of Computational and Graphical
+  Statistics~(just-accepted), 1--28.
+
+\bibitem[{Gramacy and Lee(2008)}]{gramacy2008bayesian}
+Gramacy, R.~B., Lee, H.~K., 2008. Bayesian treed gaussian process models with
+  an application to computer modeling. Journal of the American Statistical
+  Association 103~(483).
+
+\bibitem[{Hennig and Kiefel(2013)}]{hennig2013quasi}
+Hennig, P., Kiefel, M., 2013. Quasi-newton methods: A new direction. The
+  Journal of Machine Learning Research 14~(1), 843--865.
+
+\bibitem[{Hennig et~al.(2015)Hennig, Osborne, and
+  Girolami}]{hennig2015probabilistic}
+Hennig, P., Osborne, M.~A., Girolami, M., 2015. Probabilistic numerics and
+  uncertainty in computations. Proc. R. Soc. A 471~(2179), 20150142.
+
+\bibitem[{J{\"a}kel et~al.(2007)J{\"a}kel, Sch{\"o}lkopf, and
+  Wichmann}]{jakel2007tutorial}
+J{\"a}kel, F., Sch{\"o}lkopf, B., Wichmann, F.~A., 2007. A tutorial on kernel
+  methods for categorization. Journal of Mathematical Psychology 51~(6),
+  343--358.
+
+\bibitem[{Kac and Siegert(1947)}]{kac1947explicit}
+Kac, M., Siegert, A., 1947. An explicit representation of a stationary gaussian
+  process. The Annals of Mathematical Statistics, 438--442.
+
+\bibitem[{Kemp et~al.(2006)Kemp, Tenenbaum, Griffiths, Yamada, and
+  Ueda}]{kemp2006learning}
+Kemp, C., Tenenbaum, J.~B., Griffiths, T.~L., Yamada, T., Ueda, N., 2006.
+  Learning systems of concepts with an infinite relational model. In: AAAI.
+  Vol.~3. p.~5.
+
+\bibitem[{Ko et~al.(1995)Ko, Lee, and Queyranne}]{ko1995exact}
+Ko, C.-W., Lee, J., Queyranne, M., 1995. An exact algorithm for maximum entropy
+  sampling. Operations Research 43~(4), 684--691.
+
+\bibitem[{Krause and Golovin(2012)}]{krause2012submodular}
+Krause, A., Golovin, D., 2012. Submodular function maximization. Tractability:
+  Practical Approaches to Hard Problems 3, 19.
+
+\bibitem[{Krause et~al.(2008)Krause, Singh, and Guestrin}]{krause2008near}
+Krause, A., Singh, A., Guestrin, C., 2008. Near-optimal sensor placements in
+  gaussian processes: Theory, efficient algorithms and empirical studies. The
+  Journal of Machine Learning Research 9, 235--284.
+
+\bibitem[{Lucas et~al.(2015)Lucas, Griffiths, Williams, and
+  Kalish}]{lucas2015rational}
+Lucas, C.~G., Griffiths, T.~L., Williams, J.~J., Kalish, M.~L., 2015. A
+  rational model of function learning. Psychonomic bulletin \& review, 1--23.
+
+\bibitem[{Meder and Nelson(2012)}]{meder2012information}
+Meder, B., Nelson, J.~D., 2012. Information search with situation-specific
+  reward functions. Judgment and Decision Making 7~(2), 119--148.
+
+\bibitem[{Mockus(2010)}]{mockus2010bayesian}
+Mockus, J., 2010. Bayesian Heuristic approach to discrete and global
+  optimization: Algorithms, visualization, software, and applications.
+  Springer-Verlag.
+
+\bibitem[{Mockus(2012)}]{mockus2012bayesian}
+Mockus, J., 2012. Bayesian approach to global optimization: theory and
+  applications. Vol.~37. Springer Science \& Business Media.
+
+\bibitem[{Myung and Pitt(2009)}]{myung2009optimal}
+Myung, J.~I., Pitt, M.~A., 2009. Optimal experimental design for model
+  discrimination. Psychological review 116~(3), 499.
+
+\bibitem[{Rasmussen(2006)}]{rasmussen2006gaussian}
+Rasmussen, C.~E., 2006. Gaussian processes for machine learning.
+
+\bibitem[{Schulz et~al.(2015{\natexlab{a}})Schulz, Konstantinidis, and
+  \&~Speekenbrink}]{schulz2015learning}
+Schulz, E., Konstantinidis, E., \&~Speekenbrink, M., 2015{\natexlab{a}}.
+  Learning and decisions in contextual multi-armed bandit tasks. In:
+  Proceedings of the Thirty-Seventh Annual Conference of the Cognitive Science
+  Society.
+
+\bibitem[{Schulz et~al.(2015{\natexlab{b}})Schulz, Konstantinidis, and
+  Speekenbrink}]{schulz2015exploration}
+Schulz, E., Konstantinidis, E., Speekenbrink, M., 2015{\natexlab{b}}.
+  Exploration-exploitation in a contextual multi-armed bandit task. In:
+  International Conference on Cognitive Modeling. pp. 118--123.
+
+\bibitem[{Schulz et~al.(2015{\natexlab{c}})Schulz, Tenenbaum, Reshef,
+  Speekenbrink, and Gershman}]{schulzassessing}
+Schulz, E., Tenenbaum, J.~B., Reshef, D.~N., Speekenbrink, M., Gershman, S.~J.,
+  2015{\natexlab{c}}. Assessing the perceived predictability of functions. In:
+  Proceedings of the Thirty-Seventh Annual Conference of the Cognitive Science
+  Society.
+
+\bibitem[{Snoek et~al.(2012)Snoek, Larochelle, and Adams}]{snoek2012practical}
+Snoek, J., Larochelle, H., Adams, R.~P., 2012. Practical bayesian optimization
+  of machine learning algorithms. In: Advances in neural information processing
+  systems. pp. 2951--2959.
+
+\bibitem[{Srinivas et~al.(2009)Srinivas, Krause, Kakade, and
+  Seeger}]{srinivas2009gaussian}
+Srinivas, N., Krause, A., Kakade, S.~M., Seeger, M., 2009. Gaussian process
+  optimization in the bandit setting: No regret and experimental design. arXiv
+  preprint arXiv:0912.3995.
+
+\bibitem[{Sui et~al.(2015)Sui, Gotovos, Burdick, and Krause}]{sui2015safe}
+Sui, Y., Gotovos, A., Burdick, J., Krause, A., 2015. Safe exploration for
+  optimization with gaussian processes. In: Proceedings of the 32nd
+  International Conference on Machine Learning (ICML-15). pp. 997--1005.
+
+\bibitem[{Wetzels et~al.(2010)Wetzels, Vandekerckhove, Tuerlinckx, and
+  Wagenmakers}]{wetzels2010bayesian}
+Wetzels, R., Vandekerckhove, J., Tuerlinckx, F., Wagenmakers, E.-J., 2010.
+  Bayesian parameter estimation in the expectancy valence model of the iowa
+  gambling task. Journal of Mathematical Psychology 54~(1), 14--27.
+
+\bibitem[{Williams(1998)}]{williams1998prediction}
+Williams, C.~K., 1998. Prediction with gaussian processes: From linear
+  regression to linear prediction and beyond. In: Learning in graphical models.
+  Springer, pp. 599--621.
+
+\end{thebibliography}
